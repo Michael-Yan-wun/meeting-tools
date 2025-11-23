@@ -1,0 +1,184 @@
+# Cursor Vibe Coding 提示詞
+
+## 專案描述
+
+建立一個 **AI 智慧會議記錄助手**，使用 Node.js 前端 + Python FastAPI 後端的架構，透過 Google Gemini API 直接分析音訊檔案，自動生成結構化的會議記錄 Word 文件。
+
+## 核心功能需求
+
+1. **音訊上傳與分析**
+   - 前端：Node.js Express 提供上傳介面（Bootstrap 5 UI）
+   - 後端：FastAPI 接收檔案，呼叫 Google Gemini 1.5 Flash API
+   - Gemini 直接處理音訊：上傳檔案 → 等待處理 → 發送 Prompt 要求 JSON 格式的結構化資料
+
+2. **資料結構化**
+   - Gemini 回傳 JSON 包含：
+     - `transcription`: 完整逐字稿
+     - `meeting_topics`: 會議主題列表
+     - `participants`: 參與人列表（含 name, role）
+     - `key_points`: 重點列表（含 title, content）
+     - `next_steps`: 待辦事項列表（含 action, owner）
+     - `summary`: 總結摘要
+
+3. **Word 報告生成**
+   - 使用 python-docx 生成 Word 檔案
+   - 格式參照「中正北路24號_會議記錄整理.docx」範本：
+     - 標題：`{檔名} 會議記錄整理`
+     - 一、會議主題（條列式）
+     - 二、參與人物（表格：姓名/角色 | 職責說明）
+     - 三、重點內容摘要（編號列表 + 內容）
+     - 四、會議結論與行動項目（表格：行動項目 | 負責人）
+     - 五、總結摘要（段落文字）
+   - **不包含逐字稿**
+
+4. **資料庫儲存**
+   - SQLite 儲存所有會議記錄
+   - 欄位：id, filename, transcription, participants (JSON), key_points (JSON), next_steps (JSON), summary, meeting_topics (JSON), created_at
+
+5. **前端 UI**
+   - 左側欄：歷史記錄列表
+   - 主畫面：會議詳情展示（卡片式設計）
+   - 上傳 Modal：檔案選擇 + 進度條
+   - 下載按鈕：直接下載 Word 檔案
+
+## 技術規格
+
+### 前端 (Node.js)
+- **Port**: 3200
+- **框架**: Express + EJS
+- **UI**: Bootstrap 5
+- **API 呼叫**: Fetch API 指向 `http://localhost:8000/api`
+
+### 後端 (Python FastAPI)
+- **Port**: 8000
+- **框架**: FastAPI + Uvicorn
+- **AI SDK**: `google-genai` (版本 >= 1.0.0)
+- **檔案處理**: `python-multipart`
+- **Word 生成**: `python-docx`
+
+### Gemini API 使用方式
+
+```python
+from google import genai
+from google.genai import types
+
+client = genai.Client(api_key=api_key)
+
+# 1. 上傳檔案
+upload_result = client.files.upload(file=file_path)
+
+# 2. 等待處理完成
+while upload_result.state.name == "PROCESSING":
+    time.sleep(2)
+    upload_result = client.files.get(name=upload_result.name)
+
+# 3. 發送分析請求
+response = client.models.generate_content(
+    model="gemini-1.5-flash",
+    contents=[
+        types.Content(
+            role="user",
+            parts=[
+                types.Part.from_uri(
+                    file_uri=upload_result.uri,
+                    mime_type=upload_result.mime_type
+                ),
+                types.Part.from_text(text=prompt)
+            ]
+        )
+    ],
+    config=types.GenerateContentConfig(
+        response_mime_type="application/json"
+    )
+)
+```
+
+### Prompt 範本
+
+```
+你是一個專業的會議記錄秘書。請聆聽這段會議錄音，並完成以下兩項任務：
+1. 產出完整的繁體中文逐字稿（Transcripts）。
+2. 將會議內容整理成結構化記錄。
+
+請依照以下 JSON Schema 回傳資料，不要包含 markdown 標記，直接回傳 JSON：
+{
+    "transcription": "完整的會議逐字稿內容...",
+    "meeting_topics": ["主題1", "主題2"],
+    "participants": [
+        {"name": "姓名", "role": "職稱或在會議中的職責描述"}
+    ],
+    "key_points": [
+        {"title": "重點標題", "content": "詳細內容說明"}
+    ],
+    "next_steps": [
+        {"action": "具體行動項目", "owner": "負責人或協調人"}
+    ],
+    "summary": "一段約 100-200 字的會議總結摘要"
+}
+```
+
+## 專案結構
+
+```
+meeting-tools/
+├── frontend/
+│   ├── server.js              # Express 伺服器
+│   ├── package.json
+│   ├── views/
+│   │   └── index.ejs         # 主頁面模板
+│   └── public/
+│       ├── css/
+│       │   └── style.css     # 自定義樣式
+│       └── js/
+│           └── main.js        # 前端邏輯（API 呼叫、UI 更新）
+│
+├── backend/
+│   ├── main.py                # FastAPI 主程式
+│   ├── requirements.txt
+│   ├── .env                   # GEMINI_API_KEY
+│   ├── services/
+│   │   ├── transcriber.py     # Gemini 音訊分析邏輯
+│   │   └── doc_gen.py         # Word 生成邏輯
+│   ├── uploads/               # 暫存上傳檔
+│   └── downloads/             # 生成的 Word 檔案
+│
+└── start.sh                   # 一鍵啟動腳本
+```
+
+## API 端點
+
+- `GET /` - 前端首頁
+- `GET /api/meetings` - 取得所有會議列表
+- `GET /api/meetings/{id}` - 取得單一會議詳情
+- `POST /api/upload` - 上傳音訊檔案（FormData，欄位名：`file`）
+- `GET /api/download/{filename}` - 下載 Word 檔案
+
+## 環境變數
+
+- `GEMINI_API_KEY`: Google Gemini API 金鑰
+
+## 啟動指令
+
+```bash
+# 後端
+cd backend && python3 main.py
+
+# 前端
+cd frontend && npm start
+```
+
+## 設計要點
+
+1. **前端 UI**：使用 Bootstrap 5 卡片式設計，左側欄顯示歷史記錄，主畫面展示會議詳情
+2. **進度顯示**：上傳時顯示進度條與狀態文字
+3. **錯誤處理**：前端 catch 錯誤並顯示友善訊息
+4. **CORS**：後端允許所有來源（開發環境）
+5. **檔案清理**：處理完成後自動刪除暫存音訊檔
+
+## 注意事項
+
+- Gemini API 有免費額度，注意使用量
+- 音訊檔案建議不超過 50MB
+- 支援格式：mp3, wav, m4a
+- 前端 API Base URL 設定為 `http://localhost:8000/api`
+

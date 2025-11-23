@@ -1,0 +1,6 @@
+streamlit
+openai-whisper
+google-genai
+python-docx
+pandas
+python-dotenv

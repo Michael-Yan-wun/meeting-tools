@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+*.egg-info/
+dist/
+build/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.pnpm-debug.log
+
+# 環境變數與敏感資訊
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+
+# 資料庫
+*.db
+*.sqlite
+*.sqlite3
+meetings.db
+
+# 上傳與下載檔案
+uploads/
+downloads/
+*.mp3
+*.wav
+*.m4a
+*.docx
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 系統檔案
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+backend.log
+frontend.log
+
+# 暫存檔案
+*.tmp
+*.temp
+.cache/
+
+# Python 虛擬環境
+venv/
+ENV/
+

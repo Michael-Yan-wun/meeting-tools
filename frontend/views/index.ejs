@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 智慧會議記錄助手</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="d-flex" id="wrapper">
+        <!-- Sidebar -->
+        <div class="bg-white border-end" id="sidebar-wrapper">
+            <div class="sidebar-heading border-bottom bg-light text-center py-4">
+                <i class="fas fa-microphone-alt me-2 text-primary"></i><strong>Meeting AI</strong>
+            </div>
+            <div class="list-group list-group-flush" id="history-list">
+                <div class="text-center py-3 text-muted">載入中...</div>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom px-4">
+                <button class="btn btn-primary" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="ms-auto">
+                    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                        <i class="fas fa-plus me-1"></i> 新增會議記錄
+                    </button>
+                </div>
+            </nav>
+
+            <div class="container-fluid px-4 py-4">
+                <div id="main-content">
+                    <div class="text-center py-5 text-muted" id="welcome-screen">
+                        <i class="fas fa-robot fa-5x mb-3 text-secondary opacity-25"></i>
+                        <h3>歡迎使用 AI 會議記錄助手</h3>
+                        <p>請從左側選擇歷史記錄，或點擊右上角新增會議。</p>
+                    </div>
+                    
+                    <div id="result-view" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2 id="meeting-title" class="mb-0">會議標題</h2>
+                            <span id="meeting-date" class="text-muted"></span>
+                        </div>
+
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title text-primary"><i class="fas fa-align-left me-2"></i>總結摘要</h5>
+                                <p class="card-text" id="meeting-summary"></p>
+                            </div>
+                        </div>
+
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="card h-100 shadow-sm">
+                                    <div class="card-header bg-white">
+                                        <h5 class="mb-0"><i class="fas fa-list-ul me-2 text-success"></i>會議主題</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <ul id="meeting-topics-list" class="list-group list-group-flush"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card h-100 shadow-sm">
+                                    <div class="card-header bg-white">
+                                        <h5 class="mb-0"><i class="fas fa-users me-2 text-info"></i>參與人員</h5>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <table class="table table-hover mb-0" id="participants-table">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>姓名 / 角色</th>
+                                                    <th>職責 / 說明</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-4 mt-2">
+                            <div class="col-md-12">
+                                <div class="card shadow-sm">
+                                    <div class="card-header bg-white">
+                                        <h5 class="mb-0"><i class="fas fa-star me-2 text-warning"></i>重點內容</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="key-points-list"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-4 mt-2">
+                            <div class="col-md-12">
+                                <div class="card shadow-sm border-primary">
+                                    <div class="card-header bg-primary text-white">
+                                        <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>下一步行動 (Action Items)</h5>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <table class="table table-striped mb-0" id="next-steps-table">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>待辦事項</th>
+                                                    <th width="25%">負責人</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-5 mb-5">
+                            <a href="#" id="download-btn" class="btn btn-lg btn-success">
+                                <i class="fas fa-file-word me-2"></i> 下載 Word 報告
+                            </a>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div class="modal fade" id="uploadModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">上傳新會議錄音</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="upload-form">
+                        <div class="mb-3">
+                            <label for="audioFile" class="form-label">選擇錄音檔 (mp3, wav, m4a)</label>
+                            <input class="form-control" type="file" id="audioFile" name="file" accept=".mp3,.wav,.m4a" required>
+                        </div>
+                        <div id="upload-progress" class="progress mb-3 d-none">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div id="status-text" class="text-muted small text-center mb-2"></div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary" id="submit-btn">開始分析</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/main.js"></script>
+</body>
+</html>
+
